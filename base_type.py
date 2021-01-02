@@ -1,9 +1,11 @@
 from biobert_embedding.embedding import BiobertEmbedding
 import nltk
+import json
+import numpy as np
 from nltk import tokenize
-from nltk.corpus import state_union
-from nltk.tokenize import PunktSentenceTokenizer
-from nltk.corpus import treebank
+# from nltk.corpus import state_union
+# from nltk.tokenize import PunktSentenceTokenizer
+# from nltk.corpus import treebank
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 
@@ -70,6 +72,15 @@ class Sentence:
     def __abs__(self):
         return self.word_vector
 
+    def to_json(self):
+        return json.dumps(
+            {
+                "text": self.__str__(),
+                "word_vec": [d.tolist() for d in self.word_vector],
+                "vector": self.sentence_vector.tolist()
+            }
+        )
+
 
 class Question(Sentence):
     pass
@@ -91,24 +102,29 @@ class Paragrapth:
             raise StopIteration
 
     # phép toán cộng đoạn văn với đoạn văn, đoạn văn với câu ̣làm thay đổi giá trị đoạn hiện tại
-    def __add__(self, Object):
-        if isinstance(Object, Sentence):
-            self.sentences.append(Object)
+    def __add__(self, sent_para):
+        if isinstance(sent_para, Sentence):
+            self.sentences.append(sent_para)
         else:
-            if isinstance(Object, Paragrapth):
-                for sen in Object.sentences:
+            if isinstance(sent_para, Paragrapth):
+                for sen in sent_para.sentences:
                     self.sentences.append(sen)
             else:
-                raise TypeError(Object.__class__.__name__ + " can not be added with a Paragraph")
+                raise TypeError(sent_para.__class__.__name__ + " can not be added with a Paragraph")
         return self
 
     # nội dung dạng text của đoạn
     def __str__(self):
-        return '. '.join([str(sentence) for sentence in self.sentences])
+        return ' '.join([str(sentence) for sentence in self.sentences])
 
     # tập hợp các vector câu trong đoạn
     def __abs__(self):
         return [sentence.sentence_vector for sentence in self.sentences]
+
+    def to_json(self):
+        return json.dumps(
+            [ sent.to_json() for sent in self.sentences]
+        )
 
 
 class Entry:
@@ -125,4 +141,23 @@ class Entry:
         ]
 
     def __str__(self):
-        return '"question": {} \n"multi_abs_summ": {}\n"answer_ext_summ": {}'.format(str(self.question),str(self.multi_abs_summ),str(self.multi_ext_summ))
+        return '"question": {} \n"multi_abs_summ": {}\n"answer_ext_summ": {}'.format(str(self.question),
+                                                                                     str(self.multi_abs_summ),
+                                                                                     str(self.multi_ext_summ))
+    def to_json(self):
+        return json.dumps(
+            {
+                "question": self.question.to_json(),
+                "multi_abs_summ": self.multi_abs_summ.to_json(),
+                "multi_ext_summ": self.multi_ext_summ.to_json(),
+                "answers":
+                [
+                    {"answer_abs_summ": item["answer_abs_summ"].to_json(),
+                     "answer_ext_summ": item["answer_ext_summ"].to_json(),
+                     "article": item["article"].to_json(),
+                     "rating": item["rating"]
+                     } for item in self.answers
+                ]
+            }
+        )
+
