@@ -1,3 +1,13 @@
 QA_System: https://chiqa.nlm.nih.gov/
 Task_link: https://sites.google.com/view/mediqa2021?fbclid=IwAR26H43Xz-JuY1HM6H3iRexzzOYvpc01Bs7yuiNme-SKu9dlpolbmT51L0g
-		https://vnueduvn-my.sharepoint.com/personal/lhquynh_vnu_edu_vn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Flhquynh%5Fvnu%5Fedu%5Fvn%2FDocuments%2FResearch%2FMediQA%5FBioNLPST%202021&originalPath=aHR0cHM6Ly92bnVlZHV2bi1teS5zaGFyZXBvaW50LmNvbS86ZjovZy9wZXJzb25hbC9saHF1eW5oX3ZudV9lZHVfdm4vRWpiVVdPeDVGeWREazVXcWRyMWlRem9CM2wzQUtaWmtxcUk1YklPSFpKcnN5dz9ydGltZT1UTWc0aUdtcTJFZw
+		   https://vnueduvn-my.sharepoint.com/personal/lhquynh_vnu_edu_vn/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Flhquynh%5Fvnu%5Fedu%5Fvn%2FDocuments%2FResearch%2FMediQA%5FBioNLPST%202021&originalPath=aHR0cHM6Ly92bnVlZHV2bi1teS5zaGFyZXBvaW50LmNvbS86ZjovZy9wZXJzb25hbC9saHF1eW5oX3ZudV9lZHVfdm4vRWpiVVdPeDVGeWREazVXcWRyMWlRem9CM2wzQUtaWmtxcUk1YklPSFpKcnN5dz9ydGltZT1UTWc0aUdtcTJFZw
+Đoán nhận cấu trúc câu (sử dụng văn phạm):
+    http://www.nltk.org/book/ch08-extras.html#ex-gfs
+    https://www.nltk.org/book/ch08.html
+    http://nltk.sourceforge.net/doc/en/ch07.html
+    https://stackoverflow.com/questions/33587667/extracting-all-nouns-from-a-text-file-using-nltk
+    https://www.kaggle.com/pemagrg/question-analysis-using-nltk
+nltk API:
+    https://tedboy.github.io/nlps/generated/nltk.html
+bioBERT: (cái này hầu như ko thấy được tài liệu, nên em nghĩ sẽ chuyển sang dùng Transformers)
+    https://pypi.org/project/biobert-embedding/

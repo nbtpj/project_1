@@ -1,7 +1,5 @@
 from biobert_embedding.embedding import BiobertEmbedding
 import nltk
-import json
-import numpy as np
 from nltk import tokenize
 # from nltk.corpus import state_union
 # from nltk.tokenize import PunktSentenceTokenizer
@@ -9,7 +7,7 @@ from nltk import tokenize
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 
-
+# open these lines if you run code first time
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('conll2000')
@@ -73,13 +71,11 @@ class Sentence:
         return self.word_vector
 
     def to_json(self):
-        return json.dumps(
-            {
-                "text": self.__str__(),
-                "word_vec": [d.tolist() for d in self.word_vector],
-                "vector": self.sentence_vector.tolist()
-            }
-        )
+        return {
+            "text": self.__str__(),
+            "word_vec": [d.tolist() for d in self.word_vector],
+            "vector": self.sentence_vector.tolist()
+        }
 
 
 class Question(Sentence):
@@ -122,9 +118,7 @@ class Paragrapth:
         return [sentence.sentence_vector for sentence in self.sentences]
 
     def to_json(self):
-        return json.dumps(
-            [ sent.to_json() for sent in self.sentences]
-        )
+        return [sent.to_json() for sent in self.sentences]
 
 
 class Entry:
@@ -144,13 +138,13 @@ class Entry:
         return '"question": {} \n"multi_abs_summ": {}\n"answer_ext_summ": {}'.format(str(self.question),
                                                                                      str(self.multi_abs_summ),
                                                                                      str(self.multi_ext_summ))
+
     def to_json(self):
-        return json.dumps(
-            {
-                "question": self.question.to_json(),
-                "multi_abs_summ": self.multi_abs_summ.to_json(),
-                "multi_ext_summ": self.multi_ext_summ.to_json(),
-                "answers":
+        return {
+            "question": self.question.to_json(),
+            "multi_abs_summ": self.multi_abs_summ.to_json(),
+            "multi_ext_summ": self.multi_ext_summ.to_json(),
+            "answers":
                 [
                     {"answer_abs_summ": item["answer_abs_summ"].to_json(),
                      "answer_ext_summ": item["answer_ext_summ"].to_json(),
@@ -158,6 +152,4 @@ class Entry:
                      "rating": item["rating"]
                      } for item in self.answers
                 ]
-            }
-        )
-
+        }
