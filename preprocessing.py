@@ -8,6 +8,7 @@ LINK_TO_INPUT = 'DATA/question_driven_answer_summarization_primary_dataset.json'
 LINK_TO_OUTPUT = 'DATA/question_driven_answer_summarization_primary_dataset_output.json'
 LINK_TO_TEMPLATE_FILE = 'DATA/template.txt'
 
+
 # phâp cụm phâm cấp: 1 đoạn văn -> n đoạn văn
 def para_clustering(para, clusters=3, distance='euclidean'):
     clustering = AgglomerativeClustering(n_clusters=clusters, affinity=distance).fit(abs(para))
@@ -20,26 +21,20 @@ def para_clustering(para, clusters=3, distance='euclidean'):
 
 
 class Preprocessing:
-
     data = json.load(open(LINK_TO_INPUT))
     output = []
 
     def save(self):
-        pr = False
         self.output = []
         if os.path.exists(LINK_TO_OUTPUT) and os.path.getsize(LINK_TO_OUTPUT) > 0:
-            pass
+            try:
+                self.output = json.load(open(LINK_TO_OUTPUT, mode='r'))
+            except Exception as e:
+                print(str(e))
         else:
             for ques_id in self.data:
                 m = Entry(self.data[ques_id]).to_json()
                 self.output.append(m)
-                # if pr is False:
-                #     print("done")
-                #     with open(LINK_TO_OUTPUT, mode='w+') as f:
-                #         json.dump(m, f)
-                #         f.close()
-                # return None
-                #     for testing process , open these lines
             with open(LINK_TO_OUTPUT, mode='w+') as f:
                 json.dump(self.output, f)
                 f.close()
@@ -47,6 +42,3 @@ class Preprocessing:
 
     def __init__(self):
         self.save()
-        self.output = json.load(open(LINK_TO_OUTPUT, mode='r'))
-
-

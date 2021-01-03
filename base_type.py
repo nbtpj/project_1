@@ -27,12 +27,18 @@ class Sentence:
     GRAMMAR = nltk.data.load('grammars/large_grammars/atis.cfg')
     BERT = BiobertEmbedding()
 
-    def __init__(self, text,
-                 bert=BERT):
+    # khởi tạo với dữ liệu bert, text|json
+    def __init__(self, text='',
+                 bert=BERT, json=None):
         self.bert = bert
-        self.word_vector = bert.word_vector(text)
-        self.sentence_vector = bert.sentence_vector(text)
-        self.text = word_tokenize(text)
+        if json is None:
+            self.word_vector = bert.word_vector(text)
+            self.sentence_vector = bert.sentence_vector(text)
+            self.text = word_tokenize(text)
+        else:
+            self.word_vector = json["word_vec"]
+            self.sentence_vector = json["vector"]
+            self.text = word_tokenize(json["text"])
 
     def __str__(self):
         return ' '.join(self.text)
@@ -91,9 +97,12 @@ class Question(Sentence):
 
 # đoạn văn : là tập hợp các câu
 class Paragrapth:
-    # Khởi tạo đoạn văn bản với dữ liệu text
-    def __init__(self, text="") -> object:
-        self.sentences = [Sentence(sen) for sen in tokenize.sent_tokenize(text)]
+    # Khởi tạo đoạn văn bản với dữ liệu text| json
+    def __init__(self, text="", json=None):
+        if json is None:
+            self.sentences = [Sentence(text=sen) for sen in tokenize.sent_tokenize(text)]
+        else:
+            self.sentences = [Sentence(json=json[j]) for j in json]
         self.iter = 0
 
     def __next__(self):
