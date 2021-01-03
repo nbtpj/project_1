@@ -2,8 +2,12 @@ from preprocessing import para_clustering
 from base_type import Paragrapth
 from preprocessing import Preprocessing, LINK_TO_TEMPLATE_FILE
 
+
+# test tiền xử lí và lưu-load dữ liệu tiền xử lí
 x = Preprocessing()
 print(x.output)
+
+# test phân cụm phân cấp
 count = -1
 a = Paragrapth(
     "Cystic fibrosis Overview Cystic fibrosis is an inherited disorder that causes severe damage to the lungs, "
