@@ -7,6 +7,7 @@ from nltk import tokenize
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
 
+
 # open these lines if you run code first time
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
@@ -70,6 +71,12 @@ class Sentence:
     def __abs__(self):
         return self.word_vector
 
+    # trả dữ liệu về dạng dict:
+    # {
+    #     "text": câu đã được token và nối lại
+    #     "word_vec": vector từ
+    #     "vector":vector câu
+    # }
     def to_json(self):
         return {
             "text": self.__str__(),
@@ -85,7 +92,7 @@ class Question(Sentence):
 # đoạn văn : là tập hợp các câu
 class Paragrapth:
     # Khởi tạo đoạn văn bản với dữ liệu text
-    def __init__(self, text=""):
+    def __init__(self, text="") -> object:
         self.sentences = [Sentence(sen) for sen in tokenize.sent_tokenize(text)]
         self.iter = 0
 
@@ -115,10 +122,18 @@ class Paragrapth:
 
     # tập hợp các vector câu trong đoạn
     def __abs__(self):
-        return [sentence.sentence_vector for sentence in self.sentences]
+        return [sentence.sentence_vector.tolist() for sentence in self.sentences]
 
+    # trả dữ liệu dưới dạng list:
+    # [
+    #     câu 1,
+    #     câu 2,...
+    # ]
     def to_json(self):
         return [sent.to_json() for sent in self.sentences]
+
+    def __getitem__(self, key):
+        return self.sentences[key]
 
 
 class Entry:
@@ -139,6 +154,21 @@ class Entry:
                                                                                      str(self.multi_abs_summ),
                                                                                      str(self.multi_ext_summ))
 
+    # trả dữ liệu dưới dạng dict:
+    # {
+    #     "question": đoạn question
+    #     "multi_abs_summ": đoạn tóm tắt abstract đa văn bản
+    #     "multi_ext_summ": đoạn tóm tắt extract đa văn bản
+    #     "answers": [
+    #         {
+    #             "answer_abs_summ": đoạn tóm tắt abstract đơn văn bản
+    #             "answer_ext_summ": đoạn tóm tắt extract đơn văn bản
+    #             "article": nội dung văn bản
+    #             "rating": đánh giá
+    #             <do section được làm thủ công nên em không đưa vào dữ liệu>
+    #         }
+    #     ]
+    # }
     def to_json(self):
         return {
             "question": self.question.to_json(),
