@@ -24,7 +24,7 @@ class Preprocessing:
     data = json.load(open(LINK_TO_INPUT))
     output = []
 
-    def save(self):
+    def __init__(self):
         self.output = []
         if os.path.exists(LINK_TO_OUTPUT) and os.path.getsize(LINK_TO_OUTPUT) > 0:
             try:
@@ -39,6 +39,3 @@ class Preprocessing:
                 json.dump(self.output, f)
                 f.close()
             print("successfully saving data!")
-
-    def __init__(self):
-        self.save()
