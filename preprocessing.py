@@ -14,12 +14,12 @@ class Preprocessing:
         for ques_id in self.data:
             m = Entry(self.data[ques_id]).to_json()
             self.output.append(m)
-            with open(self.LINK_TO_TEMPLATE_FILE, mode='a+') as f:
-                json.dump(m, f)
-        #         for testing process , open these lines
-        # with open(self.LINK_TO_OUTPUT, mode='w+') as f:
-        #     json.dump(self.output, f)
-        #     f.close()
+            # with open(self.LINK_TO_TEMPLATE_FILE, mode='a+') as f:
+            #     json.dump(m, f)
+            #     for testing process , open these lines
+        with open(self.LINK_TO_OUTPUT, mode='w+') as f:
+            json.dump(self.output, f)
+            f.close()
         print("successfully saving data!")
 
     def __init__(self):
