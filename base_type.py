@@ -6,9 +6,12 @@ from nltk import tokenize
 # from nltk.corpus import treebank
 from nltk.tokenize import word_tokenize
 from nltk.tag import pos_tag
+from nltk.stem.porter import *
+from nltk.corpus import stopwords
 
 
 # open these lines if you run code first time
+# nltk.download('stopwords')
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('conll2000')
@@ -26,14 +29,18 @@ class Sentence:
     #  Văn phạm
     GRAMMAR = nltk.data.load('grammars/large_grammars/atis.cfg')
     BERT = BiobertEmbedding()
+    STEMMER = PorterStemmer()
+    STOPWORD = stopwords.words('english')
 
     # khởi tạo với dữ liệu bert, text|json
     def __init__(self, text='',
                  bert=BERT, json=None):
         self.bert = bert
         if json is None:
-            self.word_vector = bert.word_vector(text)
-            self.sentence_vector = bert.sentence_vector(text)
+            temp_text = word_tokenize(text)
+            temp_text = ' '.join([self.STEMMER.stem(word) for word in temp_text if word not in self.STOPWORD])
+            self.word_vector = bert.word_vector(temp_text)
+            self.sentence_vector = bert.sentence_vector(temp_text)
             self.text = word_tokenize(text)
         else:
             self.word_vector = json["word_vec"]
