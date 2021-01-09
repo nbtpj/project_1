@@ -201,5 +201,6 @@ class Entry:
                 ]
         }
 
+
 def if_isf():
     ...
