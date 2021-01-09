@@ -16,6 +16,6 @@ download stopwords:
     >> nltk.download('stopwords')
 
 # Description
-+ folde DATA contains raw data
++ folder DATA contains raw data
 + set the LINK_TO_CORE_NLP in base_type.py by your own path to ..\stanford-corenlp-latest\stanford-corenlp-4.2.0
 + more documents: link.txt
