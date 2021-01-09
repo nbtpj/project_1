@@ -1,8 +1,11 @@
+import os
+from math import log, e
+
 from biobert_embedding.embedding import BiobertEmbedding
 from nltk import tokenize
-from nltk.stem.porter import *
 from nltk.corpus import stopwords
-import os
+from nltk.stem.porter import *
+from rouge import Rouge
 from stanfordcorenlp import StanfordCoreNLP
 
 LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
@@ -19,6 +22,17 @@ def get_core_nlp():
 
 
 class Sentence:
+    """
+    Sentence class:
+        - save a raw text of the sentence (self.text)
+        - preprocess:
+            + tokenize          | => create | word     |vector
+            + remove stop words |           | sentence |
+            + lower             |           | self.tokens
+                                | => extract features
+
+    """
+    ROUGE = Rouge()
     BERT = BiobertEmbedding()
     STEMMER = PorterStemmer()
     STOPWORD = stopwords.words('english')
@@ -26,15 +40,18 @@ class Sentence:
 
     def __init__(self, text='',
                  bert=BERT, json=None, nlp=NLP):
+        self.iter = 0
         self.nlp = nlp
+        self.rouge = None
         self.bert = bert
         self.n_of_nouns = 0
         self.n_of_numerals = 0
         self.pos_in_para = None
         self.tf_isf = None
+        self.pos_tag_ = None
         if json is None:
             temp_text = self.nlp.word_tokenize(text)
-            self.tokens = [self.STEMMER.stem(word) for word in temp_text if word.lower() not in self.STOPWORD]
+            self.tokens = [self.STEMMER.stem(word.lower()) for word in temp_text if word.lower() not in self.STOPWORD]
             temp_text = ' '.join(self.tokens)
             self.word_vector = bert.word_vector(temp_text)
             self.sentence_vector = bert.sentence_vector(temp_text)
@@ -49,15 +66,33 @@ class Sentence:
         for word, tag in self.pos_tag():
             if tag[0] is 'N':
                 self.n_of_nouns += 1
-            if tag is 'CD':
+            if tag == 'CD':
                 self.n_of_numerals += 1
+        self.n_of_numerals /= len(self)
 
     def __str__(self):
         return self.text
 
+    def __iter__(self):
+        self.iter = 0
+        return self
+
+    def __next__(self):
+        try:
+            result = self.tokens[self.iter]
+            self.iter += 1
+            return result
+        except:
+            raise StopIteration
+
+    def __getitem__(self, key):
+        return self.tokens[key]
+
     def pos_tag(self):
         """Part of speech tag"""
-        return self.nlp.pos_tag(self.__str__())
+        if self.pos_tag_ is None:
+            self.pos_tag_ = self.nlp.pos_tag(self.__str__())
+        return self.pos_tag_
 
     def constituency_parsing(self):
         """Constituency Parsing"""
@@ -98,6 +133,10 @@ class Sentence:
     def __len__(self):
         return len(self.tokens)
 
+    def info(self):
+        return "{" + "\n\ttext: " + self.text + "\n\tnumber of nouns: " + str(self.n_of_nouns) + "\n\tf_numerals: " + str(
+            self.n_of_numerals) + "\n\ttf-isf: " + str(self.tf_isf) + "\n\trouge: " + str(self.rouge) + "\n}\n"
+
 
 class Question(Sentence):
     pass
@@ -118,6 +157,10 @@ class Paragrapth:
                 self.sentences.append(S)
                 self.tokens.extend(S.tokens)
         self.iter = 0
+
+    def __iter__(self):
+        self.iter = 0
+        return self
 
     def __next__(self):
         try:
@@ -154,6 +197,16 @@ class Paragrapth:
 
     def __len__(self):
         return len(self.sentences)
+
+    def fill_sentence_feature(self, center_sen=None):
+        for sen in self.sentences:
+            sen.tf_isf = tf_isf(sen, self)
+            if sen is self.sentences[0] or sen is self.sentences[len(self) - 1]:
+                sen.pos_in_para = 1
+            else:
+                sen.pos_in_para = 0
+            if center_sen is not None:
+                sen.rouge = sen.ROUGE.get_scores(sen.text, center_sen.text)
 
 
 class Entry:
@@ -202,5 +255,43 @@ class Entry:
         }
 
 
-def if_isf():
-    ...
+def tf(term, sen):
+    """
+    Term Frequency
+    :param term: word
+    :param sen: sentence
+    :return: the importance of a term in a sentence by it's frequency
+    """
+    n = 0.0
+    for word in sen:
+        if term == word:
+            n += 1.0
+    return n / len(sen)
+
+
+def isf(term, para):
+    """
+    Inverse Sentence Frequency
+    :param term: word
+    :param para: paragraph
+    :return: the importance of term in paragraph
+    """
+
+    n = 0.0
+    for sen in para:
+        if term in sen.tokens:
+            n += 1.0
+    return log(len(para) / n, e)
+
+
+def tf_isf(sen, para):
+    """
+    Term Frequency-Inverse Sentence Frequency
+    :param sen: sentence
+    :param para: paragraph
+    :return: the importance of sentence in paragraph
+    """
+    s = 0
+    for word in sen:
+        s += tf(word, sen) * isf(word, para)
+    return log(s / len(para), e)

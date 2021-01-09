@@ -3,3 +3,4 @@ stanfordcorenlp
 pytorch==1.2.0 torchvision==0.4.0 cpuonly -c pytorch
 biobert-embedding
 sklearn
+rouge
