@@ -1,11 +1,21 @@
-# Yêu cầu
-+ torch 1.2.0 : conda install pytorch==1.2.0 torchvision==0.4.0 cpuonly -c pytorch
-+ biobert : pip install biobert-embedding
-+ nltk : pip install nltk
-+ json : pip install json
+# Install
+download corenlp:
 
-# Mô tả
-+ thư mục DATA chưa các file dữ liệu
-+ file NLTK_TAG.txt chứa các loại nhãn dữ liệu (Sentence.tag())
-+ Rule sẽ được tái định nghĩa để đoán nhận câu (nếu cần thiết)
-+ các link tài liệu tham khảo: link.txt
+    wget http://nlp.stanford.edu/software/stanford-corenlp-latest.zip
+unzip the release:
+```
+unzip stanford-corenlp-latest.zip
+```
+install requirements:
+
+    pip install -r requirements.txt
+download stopwords:
+
+    python
+    >> import nltk
+    >> nltk.download('stopwords')
+
+# Description
++ folde DATA contains raw data
++ set the LINK_TO_CORE_NLP in base_type.py by your own path to ..\stanford-corenlp-latest\stanford-corenlp-4.2.0
++ more documents: link.txt
