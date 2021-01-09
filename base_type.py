@@ -1,12 +1,33 @@
 import os
-from math import log, e
+from math import log, e, cos
 
+import numpy as np
 from biobert_embedding.embedding import BiobertEmbedding
 from nltk import tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import *
-from rouge import Rouge
 from stanfordcorenlp import StanfordCoreNLP
+
+
+def unit_vector(vector):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector)
+
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
 
 LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
 
@@ -32,7 +53,6 @@ class Sentence:
                                 | => extract features
 
     """
-    ROUGE = Rouge()
     BERT = BiobertEmbedding()
     STEMMER = PorterStemmer()
     STOPWORD = stopwords.words('english')
@@ -42,7 +62,7 @@ class Sentence:
                  bert=BERT, json=None, nlp=NLP):
         self.iter = 0
         self.nlp = nlp
-        self.rouge = None
+        self.similarity = None
         self.bert = bert
         self.n_of_nouns = 0
         self.n_of_numerals = 0
@@ -127,15 +147,20 @@ class Sentence:
         return {
             "text": self.text,
             "word_vec": [d.tolist() for d in self.word_vector],
-            "vector": self.sentence_vector.tolist()
+            "vector": self.sentence_vector.tolist(),
+            "n_of_nouns": self.n_of_nouns,
+            "n_of_numerals": self.n_of_numerals,
+            "similarity": self.similarity
         }
 
     def __len__(self):
         return len(self.tokens)
 
     def info(self):
-        return "{" + "\n\ttext: " + self.text + "\n\tnumber of nouns: " + str(self.n_of_nouns) + "\n\tf_numerals: " + str(
-            self.n_of_numerals) + "\n\ttf-isf: " + str(self.tf_isf) + "\n\trouge: " + str(self.rouge) + "\n}\n"
+        return "{" + "\n\ttext: " + self.text + "\n\tnumber of nouns: " + str(
+            self.n_of_nouns) + "\n\tf_numerals: " + str(
+            self.n_of_numerals) + "\n\ttf-isf: " + str(self.tf_isf) + "\n\tsimilarity: " + str(
+            self.similarity) + "\n}\n"
 
 
 class Question(Sentence):
@@ -198,15 +223,17 @@ class Paragrapth:
     def __len__(self):
         return len(self.sentences)
 
-    def fill_sentence_feature(self, center_sen=None):
+    def fill_sentence_feature(self, center_ques=None):
         for sen in self.sentences:
             sen.tf_isf = tf_isf(sen, self)
             if sen is self.sentences[0] or sen is self.sentences[len(self) - 1]:
                 sen.pos_in_para = 1
             else:
                 sen.pos_in_para = 0
-            if center_sen is not None:
-                sen.rouge = sen.ROUGE.get_scores(sen.text, center_sen.text)
+            if center_ques is not None:
+                sen.similarity = 0
+                for sen_p in center_ques:
+                    sen.similarity += cos(angle_between(sen_p.sentence_vector, sen.sentence_vector))/len(center_ques)
 
 
 class Entry:
