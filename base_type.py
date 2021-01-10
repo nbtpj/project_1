@@ -3,10 +3,63 @@ from math import log, e, cos
 
 import numpy as np
 from biobert_embedding.embedding import BiobertEmbedding
-from nltk import tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import *
 from stanfordcorenlp import StanfordCoreNLP
+
+STOPWORD = stopwords.words('english')
+LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
+
+
+def tf(term, sen):
+    """
+    Term Frequency
+    :param term: word
+    :param sen: sentence
+    :return: the importance of a term in a sentence by it's frequency
+    """
+    n = 0.0
+    for word in sen:
+        if term == word:
+            n += 1.0
+    return n / len(sen)
+
+
+def isf(term, para):
+    """
+    Inverse Sentence Frequency
+    :param term: word
+    :param para: paragraph
+    :return: the importance of term in paragraph
+    """
+
+    n = 0.0
+    for sen in para:
+        if term in sen.tokens:
+            n += 1.0
+    return log(len(para) / n, e)
+
+
+def tf_isf(sen, para):
+    """
+    Term Frequency-Inverse Sentence Frequency
+    :param sen: sentence
+    :param para: paragraph
+    :return: the importance of sentence in paragraph
+    """
+    s = 0
+    for word in sen:
+        s += tf(word, sen) * isf(word, para)
+    return s / len(para)
+
+
+def text_preprocess(text):
+    text = text.strip().lower()
+    rs = ""
+    for word in text.split(' '):
+        if word not in STOPWORD:
+            rs += word
+    return rs
 
 
 def unit_vector(vector):
@@ -16,20 +69,10 @@ def unit_vector(vector):
 
 def angle_between(v1, v2):
     """ Returns the angle in radians between vectors 'v1' and 'v2'::
-
-            >>> angle_between((1, 0, 0), (0, 1, 0))
-            1.5707963267948966
-            >>> angle_between((1, 0, 0), (1, 0, 0))
-            0.0
-            >>> angle_between((1, 0, 0), (-1, 0, 0))
-            3.141592653589793
     """
     v1_u = unit_vector(v1)
     v2_u = unit_vector(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
-
-
-LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
 
 
 def get_core_nlp():
@@ -55,7 +98,7 @@ class Sentence:
     """
     BERT = BiobertEmbedding()
     STEMMER = PorterStemmer()
-    STOPWORD = stopwords.words('english')
+
     NLP = StanfordCoreNLP(path_or_host=LINK_TO_CORE_NLP, memory='4g')
 
     def __init__(self, text='',
@@ -70,17 +113,17 @@ class Sentence:
         self.tf_isf = None
         self.pos_tag_ = None
         if json is None:
-            temp_text = self.nlp.word_tokenize(text)
-            self.tokens = [self.STEMMER.stem(word.lower()) for word in temp_text if word.lower() not in self.STOPWORD]
-            temp_text = ' '.join(self.tokens)
-            self.word_vector = bert.word_vector(temp_text)
-            self.sentence_vector = bert.sentence_vector(temp_text)
+            text = text.strip()
             self.text = text
+            text = text_preprocess(text)
+            self.word_vector = bert.word_vector(text)
+            self.sentence_vector = bert.sentence_vector(text)
+            self.tokens = bert.tokens
+
         else:
             self.word_vector = json["word_vec"]
             self.sentence_vector = json["vector"]
-            temp_text = self.nlp.word_tokenize(json["text"])
-            self.tokens = [self.STEMMER.stem(word) for word in temp_text if word.lower() not in self.STOPWORD]
+            self.tokens = json["token"]
             self.text = json["text"]
 
         for word, tag in self.pos_tag():
@@ -150,7 +193,8 @@ class Sentence:
             "vector": self.sentence_vector.tolist(),
             "n_of_nouns": self.n_of_nouns,
             "n_of_numerals": self.n_of_numerals,
-            "similarity": self.similarity
+            "similarity": self.similarity,
+            "tokens": self.tokens
         }
 
     def __len__(self):
@@ -168,19 +212,39 @@ class Question(Sentence):
 
 
 class Paragrapth:
-    def __init__(self, text="", json=None):
+    def __init__(self, text="", js=None):
+        print(text)
         self.tokens = []
         self.sentences = []
-        if json is None:
-            for sen in tokenize.sent_tokenize(text):
-                S = Sentence(text=sen)
-                self.sentences.append(S)
-                self.tokens.extend(S.tokens)
+        if js is None:
+            text = text.strip()
+            out = text.split('. ')
+            # out = Sentence.NLP.annotate(text=text, properties={
+            #     'annotators': 'ssplit',
+            #     'outputFormat': 'json'
+            # })
+            # print('done')
+            # try:
+            #     m = []
+            #     out = json.loads(out)
+            #     for sen in out['sentences']:
+            #         m.append(' '.join([token['word'] for token in sen['tokens']]))
+            #     out = m
+            # except Exception as e:
+            #     print(str(e))
+
+            for sen in out:
+                s = Sentence(text=sen)
+                if len(s) > 2:
+                    self.sentences.append(s)
+                    self.tokens.extend(s.tokens)
+
+
         else:
-            for j in json:
-                S = Sentence(json=json[j])
-                self.sentences.append(S)
-                self.tokens.extend(S.tokens)
+            for j in js:
+                s = Sentence(json=js[j])
+                self.sentences.append(s)
+                self.tokens.extend(s.tokens)
         self.iter = 0
 
     def __iter__(self):
@@ -223,6 +287,10 @@ class Paragrapth:
     def __len__(self):
         return len(self.sentences)
 
+    def info(self):
+        rs = str([sen.info() for sen in self])
+        return rs
+
     def fill_sentence_feature(self, center_ques=None):
         for sen in self.sentences:
             sen.tf_isf = tf_isf(sen, self)
@@ -233,7 +301,8 @@ class Paragrapth:
             if center_ques is not None:
                 sen.similarity = 0
                 for sen_p in center_ques:
-                    sen.similarity += cos(angle_between(sen_p.sentence_vector, sen.sentence_vector))/len(center_ques)
+                    sen.similarity += cos(angle_between(sen_p.sentence_vector, sen.sentence_vector)) / len(center_ques)
+        return self
 
 
 class Entry:
@@ -241,14 +310,16 @@ class Entry:
 
     def __init__(self, json):
         self.question = Paragrapth(json["question"])
-        self.multi_abs_summ = Paragrapth(json["multi_abs_summ"])
-        self.multi_ext_summ = Paragrapth(json["multi_ext_summ"])
+        self.multi_abs_summ = Paragrapth(json["multi_abs_summ"]).fill_sentence_feature(self.question)
+        self.multi_ext_summ = Paragrapth(json["multi_ext_summ"]).fill_sentence_feature(self.question)
         self.answers = [
-            {"answer_abs_summ": Paragrapth(json["answers"][item]["answer_abs_summ"]),
-             "answer_ext_summ": Paragrapth(json["answers"][item]["answer_ext_summ"]),
-             "article": Paragrapth(json["answers"][item]["article"]),
-             "rating": json["answers"][item]["rating"]
-             } for item in json["answers"]
+            {"answer_abs_summ": Paragrapth(text=json["answers"][item]["answer_abs_summ"]).fill_sentence_feature(
+                self.question),
+                "answer_ext_summ": Paragrapth(text=json["answers"][item]["answer_ext_summ"]).fill_sentence_feature(
+                    self.question),
+                "article": Paragrapth(text=json["answers"][item]["article"]).fill_sentence_feature(self.question),
+                "rating": json["answers"][item]["rating"]
+            } for item in json["answers"]
         ]
 
     def to_json(self):
@@ -280,45 +351,3 @@ class Entry:
                      } for item in self.answers
                 ]
         }
-
-
-def tf(term, sen):
-    """
-    Term Frequency
-    :param term: word
-    :param sen: sentence
-    :return: the importance of a term in a sentence by it's frequency
-    """
-    n = 0.0
-    for word in sen:
-        if term == word:
-            n += 1.0
-    return n / len(sen)
-
-
-def isf(term, para):
-    """
-    Inverse Sentence Frequency
-    :param term: word
-    :param para: paragraph
-    :return: the importance of term in paragraph
-    """
-
-    n = 0.0
-    for sen in para:
-        if term in sen.tokens:
-            n += 1.0
-    return log(len(para) / n, e)
-
-
-def tf_isf(sen, para):
-    """
-    Term Frequency-Inverse Sentence Frequency
-    :param sen: sentence
-    :param para: paragraph
-    :return: the importance of sentence in paragraph
-    """
-    s = 0
-    for word in sen:
-        s += tf(word, sen) * isf(word, para)
-    return log(s / len(para), e)
