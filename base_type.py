@@ -9,6 +9,7 @@ from stanfordcorenlp import StanfordCoreNLP
 
 STOPWORD = stopwords.words('english')
 LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
+TEST_RESULT = open('DATA/result.txt', mode='a+')
 
 
 def tf(term, sen):
@@ -119,19 +120,24 @@ class Sentence:
             self.word_vector = bert.word_vector(text)
             self.sentence_vector = bert.sentence_vector(text)
             self.tokens = bert.tokens
+            for word, tag in self.pos_tag():
+                if tag[0] is 'N':
+                    self.n_of_nouns += 1
+                if tag == 'CD':
+                    self.n_of_numerals += 1
+            self.n_of_numerals /= len(self)
 
         else:
             self.word_vector = json["word_vec"]
             self.sentence_vector = json["vector"]
-            self.tokens = json["token"]
+            self.tokens = json["tokens"]
             self.text = json["text"]
+            self.n_of_nouns = json["n_of_nouns"]
+            self.n_of_numerals = json["n_of_numerals"]
+            self.similarity = json["similarity"]
+            self.pos_tag_ = json["pos_tag"]
 
-        for word, tag in self.pos_tag():
-            if tag[0] is 'N':
-                self.n_of_nouns += 1
-            if tag == 'CD':
-                self.n_of_numerals += 1
-        self.n_of_numerals /= len(self)
+        TEST_RESULT.write(self.info())
 
     def __str__(self):
         return self.text
@@ -154,7 +160,7 @@ class Sentence:
     def pos_tag(self):
         """Part of speech tag"""
         if self.pos_tag_ is None:
-            self.pos_tag_ = self.nlp.pos_tag(self.__str__())
+            self.pos_tag_ = self.nlp.pos_tag(self.text)
         return self.pos_tag_
 
     def constituency_parsing(self):
@@ -194,14 +200,16 @@ class Sentence:
             "n_of_nouns": self.n_of_nouns,
             "n_of_numerals": self.n_of_numerals,
             "similarity": self.similarity,
-            "tokens": self.tokens
+            "tokens": self.tokens,
+            "pos_tag": self.pos_tag_
         }
 
     def __len__(self):
         return len(self.tokens)
 
     def info(self):
-        return "{" + "\n\ttext: " + self.text + "\n\tnumber of nouns: " + str(
+        return "{" + "\n\ttext: " + self.text + "\n\tpos_tag: " + str(
+            self.pos_tag_) + "\n\tnumber of nouns: " + str(
             self.n_of_nouns) + "\n\tf_numerals: " + str(
             self.n_of_numerals) + "\n\ttf-isf: " + str(self.tf_isf) + "\n\tsimilarity: " + str(
             self.similarity) + "\n}\n"
@@ -313,13 +321,15 @@ class Entry:
         self.multi_abs_summ = Paragrapth(json["multi_abs_summ"]).fill_sentence_feature(self.question)
         self.multi_ext_summ = Paragrapth(json["multi_ext_summ"]).fill_sentence_feature(self.question)
         self.answers = [
-            {"answer_abs_summ": Paragrapth(text=json["answers"][item]["answer_abs_summ"]).fill_sentence_feature(
-                self.question),
+            {
+                "answer_abs_summ": Paragrapth(text=json["answers"][item]["answer_abs_summ"]).fill_sentence_feature(
+                    self.question),
                 "answer_ext_summ": Paragrapth(text=json["answers"][item]["answer_ext_summ"]).fill_sentence_feature(
                     self.question),
                 "article": Paragrapth(text=json["answers"][item]["article"]).fill_sentence_feature(self.question),
                 "rating": json["answers"][item]["rating"]
-            } for item in json["answers"]
+            }
+            for item in json["answers"]
         ]
 
     def to_json(self):
