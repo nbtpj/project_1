@@ -9,8 +9,9 @@ from stanfordcorenlp import StanfordCoreNLP
 
 STOPWORD = stopwords.words('english')
 LINK_TO_CORE_NLP = r'C:\Users\Nguyen Minh Quang\Desktop\DS_lab\project_1\corenlp'
-TEST_RESULT = open('DATA/result.txt', mode='a+')
-
+TEST_RESULT = open('DATA/result.txt', mode='w+', encoding='utf-8')
+BERT = BiobertEmbedding()
+STEMMER = PorterStemmer()
 
 def tf(term, sen):
     """
@@ -55,11 +56,22 @@ def tf_isf(sen, para):
 
 
 def text_preprocess(text):
+    """ DO NOT REMOVE STOPWORDS"""
+    text = text.strip()
+    text = text.replace('[', ' ')
+    text = text.replace(']', ' ')
+    text = text.replace('...', 'etc')
+    text = text.replace('%', 'percents')
+    return text
+
+
+def remove_stop_words(text):
+    """ REMOVE STOPWORDS"""
     text = text.strip().lower()
     rs = ""
     for word in text.split(' '):
         if word not in STOPWORD:
-            rs += word
+            rs += word + ' '
     return rs
 
 
@@ -100,7 +112,7 @@ class Sentence:
     BERT = BiobertEmbedding()
     STEMMER = PorterStemmer()
 
-    NLP = StanfordCoreNLP(path_or_host=LINK_TO_CORE_NLP, memory='4g')
+    NLP = StanfordCoreNLP(path_or_host=LINK_TO_CORE_NLP, memory='8g')
 
     def __init__(self, text='',
                  bert=BERT, json=None, nlp=NLP):
@@ -114,9 +126,9 @@ class Sentence:
         self.tf_isf = None
         self.pos_tag_ = None
         if json is None:
-            text = text.strip()
-            self.text = text
+            self.text = text_preprocess(text)
             text = text_preprocess(text)
+            text = remove_stop_words(text)
             self.word_vector = bert.word_vector(text)
             self.sentence_vector = bert.sentence_vector(text)
             self.tokens = bert.tokens
@@ -220,13 +232,15 @@ class Question(Sentence):
 
 
 class Paragrapth:
+    COUNT = 0
+    EXCEPTED_SENTENCES = []
+
     def __init__(self, text="", js=None):
-        print(text)
         self.tokens = []
         self.sentences = []
         if js is None:
             text = text.strip()
-            out = text.split('. ')
+            out = text.split('.')
             # out = Sentence.NLP.annotate(text=text, properties={
             #     'annotators': 'ssplit',
             #     'outputFormat': 'json'
@@ -242,12 +256,15 @@ class Paragrapth:
             #     print(str(e))
 
             for sen in out:
-                s = Sentence(text=sen)
-                if len(s) > 2:
-                    self.sentences.append(s)
-                    self.tokens.extend(s.tokens)
-
-
+                try:
+                    s = Sentence(text=sen)
+                    if len(s) > 2:
+                        self.sentences.append(s)
+                        self.tokens.extend(s.tokens)
+                except:
+                    self.COUNT += 1
+                    print(sen)
+                    self.EXCEPTED_SENTENCES.append(sen)
         else:
             for j in js:
                 s = Sentence(json=js[j])
