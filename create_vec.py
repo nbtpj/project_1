@@ -61,8 +61,11 @@ class Question:
                     "rating": js["answers"][ans_id]["rating"]
                 }
         else:
-            # self.data = json.load(open('DATA/VECTOR/' + self.ques_id + '.json', encoding='utf8'))
+            self.data = json.load(open('DATA/VECTOR/' + self.ques_id + '.json', encoding='utf8'))
             print('loading : question {}'.format(ques_id))
+
+    def get_sentence(self,ans_id, sen_id):
+        return self.data['answers'][ans_id]['article'][sen_id]
 
     def save(self):
         if not os.path.exists('DATA/VECTOR/' + self.ques_id + '.json'):
